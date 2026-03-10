@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance Guard - Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-blue-600">Compliance Guard</h1>
+            <p class="text-gray-500">AI-Powered Contract Auditor</p>
+        </header>
+
+        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
+            <h2 class="text-xl font-semibold mb-4">Upload Contract (PDF)</h2>
+            <form id="upload-form" class="flex items-center space-x-4">
+                <input type="file" id="file-input" accept="application/pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">Audit</button>
+            </form>
+        </div>
+
+        <div id="status-container" class="hidden bg-gray-900 text-green-400 p-4 rounded-lg shadow-inner mb-8 font-mono text-sm">
+            <p id="status-text">> Waiting for document...</p>
+        </div>
+
+        <div id="report-container" class="hidden">
+            <h2 class="text-2xl font-bold mb-4 border-b pb-2">Audit Findings</h2>
+            <div id="findings-list" class="space-y-6">
+                </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('upload-form');
+    const fileInput = document.getElementById('file-input');
+    const statusContainer = document.getElementById('status-container');
+    const statusText = document.getElementById('status-text');
+    const reportContainer = document.getElementById('report-container');
+    const findingsList = document.getElementById('findings-list');
+
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        if (!fileInput.files[0]) {
+            alert("Please select a file.");
+            return;
+        }
+
+        reportContainer.classList.add('hidden');
+        statusContainer.classList.remove('hidden');
+        statusText.innerText = "> Uploading document...";
+        findingsList.innerHTML = '';
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        try {
+            // Using a relative path perfectly bypasses cloud IDE URL mangling
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Server returned status ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const documentId = data.document_id;
+
+            connectWebSocket(documentId);
+
+        } catch (error) {
+            statusText.innerText = `> Error: ${error.message}`;
+            statusText.classList.add('text-red-400');
+        }
+    });
+
+    function connectWebSocket(documentId) {
+        // Dynamically grab the current host and swap HTTP for WS protocol
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsHost = window.location.host;
+        const ws = new WebSocket(`${wsProtocol}//${wsHost}/ws/documents/${documentId}`);
+
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            if (data.agent) {
+                statusText.innerText = `> [${data.agent} Agent]: ${data.message}`;
+            } else {
+                statusText.innerText = `> ${data.message}`;
+            }
+
+            if (data.status === 'completed') {
+                ws.close();
+                fetchReport(documentId);
+            } else if (data.status === 'failed') {
+                ws.close();
+                statusText.classList.add('text-red-400');
+            }
+        };
+
+        ws.onerror = (err) => {
+            console.error("WebSocket Error:", err);
+            statusText.innerText = "> WebSocket connection error. Ensure your port is set to 'Public'.";
+            statusText.classList.add('text-red-400');
+        };
+    }
+
+    async function fetchReport(documentId) {
+        try {
+            statusText.innerText = "> Fetching final report...";
+            // Another relative path
+            const response = await fetch(`/api/documents/${documentId}/report`);
+            const data = await response.json();
+            
+            renderFindings(data.findings);
+            
+            statusContainer.classList.add('hidden');
+            reportContainer.classList.remove('hidden');
+        } catch (error) {
+            statusText.innerText = `> Failed to load report: ${error.message}`;
+        }
+    }
+
+    function renderFindings(findings) {
+        if (findings.length === 0) {
+            findingsList.innerHTML = `<p class="text-gray-600">No high-risk clauses found. Document looks compliant!</p>`;
+            return;
+        }
+
+        findings.forEach(finding => {
+            const card = document.createElement('div');
+            card.className = "bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500";
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="text-lg font-bold text-red-600">Risk Flagged</h3>
+                    <span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">Confidence: ${(finding.confidence_score * 100).toFixed(0)}%</span>
+                </div>
+                <p class="text-sm text-gray-500 mb-4 font-semibold">Citation: ${finding.rule_citation}</p>
+                
+                <div class="mb-4">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Original Text</p>
+                    <p class="text-gray-700 bg-red-50 p-3 rounded text-sm">${finding.original_text}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Issue</p>
+                    <p class="text-gray-700 text-sm">${finding.issue_description}</p>
+                </div>
+                
+                <div>
+                    <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Suggested Rewrite</p>
+                    <p class="text-green-800 bg-green-50 p-3 rounded text-sm">${finding.suggested_rewrite}</p>
+                </div>
+            `;
+            findingsList.appendChild(card);
+        });
+    }
+    </script>
+</body>
+</html>

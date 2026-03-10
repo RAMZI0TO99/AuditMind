@@ -1,0 +1,19 @@
+# Python / Virtual Environment
+__pycache__/
+*.pyc
+venv/
+env/
+
+# Environment Variables (Keep API keys secret!)
+.env
+
+# Databases
+compliance.db
+*.sqlite3
+
+# User Uploads & Generated Files
+uploads/
+storage/
+
+# OS generated files
+.DS_Store

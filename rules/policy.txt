@@ -1,0 +1,13 @@
+COMPANY COMPLIANCE POLICY FOR FREELANCE CONTRACTS
+
+RULE 1 - PAYMENT TERMS: 
+All client payments must be made within a Net-30 day schedule from the date of invoice receipt. Any payment terms extending beyond 30 days (such as Net-60, Net-90, or Net-120) are strictly prohibited and non-compliant.
+
+RULE 2 - LIMITATION OF LIABILITY: 
+Independent Contractors shall not assume uncapped or unlimited financial liability under any circumstances. Liability must be strictly capped at the total project fee paid to the contractor. Any clause forcing the contractor to cover total business losses or unlimited damages is non-compliant.
+
+RULE 3 - INTELLECTUAL PROPERTY (IP):
+The Client assumes ownership of the final deliverables only upon full and complete payment. The Contractor retains the right to use sanitized code snippets for portfolio purposes.
+
+RULE 4 - TERMINATION:
+Contracts must include a mutual termination clause requiring no less than 14 days written notice by either party.
