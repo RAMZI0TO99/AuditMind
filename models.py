@@ -15,6 +15,7 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
+    hashed_password = Column(String) # <--- NEW: Secure password storage
     stripe_customer_id = Column(String, nullable=True)
     tier = Column(String, default="basic")
     

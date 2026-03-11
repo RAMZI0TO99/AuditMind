@@ -3,163 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Compliance Guard - Dashboard</title>
+    <title>Compliance Guard Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/styles.css">
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans p-8">
+<body class="bg-gray-50 text-gray-900 font-sans p-8">
 
-    <div class="max-w-4xl mx-auto">
-        <header class="mb-8">
-            <h1 class="text-3xl font-bold text-blue-600">Compliance Guard</h1>
-            <p class="text-gray-500">AI-Powered Contract Auditor</p>
-        </header>
-
-        <div class="bg-white p-6 rounded-lg shadow-md mb-8">
-            <h2 class="text-xl font-semibold mb-4">Upload Contract (PDF)</h2>
-            <form id="upload-form" class="flex items-center space-x-4">
-                <input type="file" id="file-input" accept="application/pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
-                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 transition">Audit</button>
-            </form>
+    <div id="auth-section" class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+        <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Compliance Guard</h2>
+        <input type="email" id="email-input" placeholder="Email address" class="w-full p-3 border rounded mb-4 focus:ring focus:ring-blue-200 outline-none">
+        <input type="password" id="password-input" placeholder="Password" class="w-full p-3 border rounded mb-6 focus:ring focus:ring-blue-200 outline-none">
+        <div class="flex gap-4">
+            <button id="login-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition">Login</button>
+            <button id="signup-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded transition">Sign Up</button>
         </div>
+        <p id="auth-status" class="text-sm mt-4 text-center font-semibold"></p>
+    </div>
 
-        <div id="status-container" class="hidden bg-gray-900 text-green-400 p-4 rounded-lg shadow-inner mb-8 font-mono text-sm">
-            <p id="status-text">> Waiting for document...</p>
-        </div>
-
-        <div id="report-container" class="hidden">
-            <h2 class="text-2xl font-bold mb-4 border-b pb-2">Audit Findings</h2>
-            <div id="findings-list" class="space-y-6">
+    <div id="dashboard-section" class="max-w-6xl mx-auto hidden">
+        <div class="flex justify-between items-center mb-8 border-b pb-4">
+            <h1 class="text-3xl font-bold text-gray-800">Compliance Dashboard</h1>
+            
+            <div class="flex items-center gap-4">
+                <div class="flex flex-col items-end">
+                    <span id="user-greeting" class="text-sm font-semibold text-gray-600"></span>
+                    <span id="tier-badge" class="px-2 py-0.5 text-[10px] font-bold rounded bg-gray-200 text-gray-600 uppercase tracking-widest mt-1">Loading...</span>
                 </div>
+                
+                <button id="upgrade-header-btn" class="hidden bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white text-sm font-bold py-2 px-4 rounded shadow transition">Upgrade to Pro</button>
+                <button id="manage-billing-btn" class="hidden bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm font-bold py-2 px-4 rounded transition">Manage Billing</button>
+                
+                <button id="logout-btn" class="bg-red-50 hover:bg-red-100 text-red-600 text-sm font-bold py-2 px-4 rounded transition">Logout</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            <div class="md:col-span-2 space-y-8">
+                <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                    <h2 class="text-xl font-semibold mb-2">Audit a Contract</h2>
+                    <p class="text-sm text-gray-500 mb-4">Upload a PDF to scan against your active rulebook.</p>
+                    <form id="upload-form" class="flex gap-4 items-center">
+                        <input type="file" id="file-input" accept=".pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded transition">Audit</button>
+                    </form>
+                </div>
+
+                <div id="status-container" class="hidden bg-gray-900 rounded-lg p-6 font-mono shadow-inner border border-gray-700">
+                    <div class="flex items-center gap-2 mb-4">
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        <span class="text-gray-400 text-xs ml-2 uppercase tracking-widest">Agent Orchestrator</span>
+                    </div>
+                    <p id="status-text" class="text-green-400 text-sm animate-pulse">> Waiting for system ready...</p>
+                </div>
+
+                <div id="report-container" class="hidden">
+                    <h2 class="text-2xl font-bold mb-4">Audit Findings</h2>
+                    <div id="findings-list" class="space-y-4"></div>
+                </div>
+            </div>
+
+            <div class="md:col-span-1">
+                <div class="relative bg-gradient-to-b from-gray-50 to-gray-100 p-6 rounded-lg shadow-sm border border-gray-200">
+                    
+                    <div id="kb-lock-overlay" class="absolute inset-0 z-10 bg-gray-50/90 backdrop-blur-[2px] flex flex-col items-center justify-center rounded-lg border border-gray-200 hidden">
+                        <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        <p class="text-sm font-bold text-gray-800 mb-1">PRO Feature</p>
+                        <p class="text-xs text-gray-500 mb-4 text-center px-4">Upload custom policy rulebooks to guide the AI.</p>
+                        <button id="upgrade-kb-btn" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 px-6 rounded-full shadow transition">Unlock for $29/mo</button>
+                    </div>
+
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        <h2 class="text-lg font-bold text-gray-800">Knowledge Base</h2>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-6">Upload your company's strict Markdown policy file. The AI will use this as its source of truth.</p>
+                    
+                    <form id="rule-upload-form" class="space-y-4">
+                        <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 transition">
+                            <input type="file" id="rule-file-input" accept=".txt,.md" class="hidden">
+                            <label for="rule-file-input" class="cursor-pointer">
+                                <span class="text-sm font-semibold text-purple-600 hover:text-purple-800">Select Rulebook (.md)</span>
+                                <p id="rule-filename-display" class="text-xs text-gray-400 mt-1">No file selected</p>
+                            </label>
+                        </div>
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-bold py-2 px-4 rounded transition">
+                            Sync to Server
+                        </button>
+                    </form>
+                    <p id="rule-upload-status" class="text-xs text-center mt-3 font-semibold"></p>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <script>
-        const uploadForm = document.getElementById('upload-form');
-    const fileInput = document.getElementById('file-input');
-    const statusContainer = document.getElementById('status-container');
-    const statusText = document.getElementById('status-text');
-    const reportContainer = document.getElementById('report-container');
-    const findingsList = document.getElementById('findings-list');
-
-    uploadForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        if (!fileInput.files[0]) {
-            alert("Please select a file.");
-            return;
-        }
-
-        reportContainer.classList.add('hidden');
-        statusContainer.classList.remove('hidden');
-        statusText.innerText = "> Uploading document...";
-        findingsList.innerHTML = '';
-
-        const formData = new FormData();
-        formData.append('file', fileInput.files[0]);
-
-        try {
-            // Using a relative path perfectly bypasses cloud IDE URL mangling
-            const response = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Server returned status ${response.status}`);
-            }
-            
-            const data = await response.json();
-            const documentId = data.document_id;
-
-            connectWebSocket(documentId);
-
-        } catch (error) {
-            statusText.innerText = `> Error: ${error.message}`;
-            statusText.classList.add('text-red-400');
-        }
-    });
-
-    function connectWebSocket(documentId) {
-        // Dynamically grab the current host and swap HTTP for WS protocol
-        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsHost = window.location.host;
-        const ws = new WebSocket(`${wsProtocol}//${wsHost}/ws/documents/${documentId}`);
-
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            
-            if (data.agent) {
-                statusText.innerText = `> [${data.agent} Agent]: ${data.message}`;
-            } else {
-                statusText.innerText = `> ${data.message}`;
-            }
-
-            if (data.status === 'completed') {
-                ws.close();
-                fetchReport(documentId);
-            } else if (data.status === 'failed') {
-                ws.close();
-                statusText.classList.add('text-red-400');
-            }
-        };
-
-        ws.onerror = (err) => {
-            console.error("WebSocket Error:", err);
-            statusText.innerText = "> WebSocket connection error. Ensure your port is set to 'Public'.";
-            statusText.classList.add('text-red-400');
-        };
-    }
-
-    async function fetchReport(documentId) {
-        try {
-            statusText.innerText = "> Fetching final report...";
-            // Another relative path
-            const response = await fetch(`/api/documents/${documentId}/report`);
-            const data = await response.json();
-            
-            renderFindings(data.findings);
-            
-            statusContainer.classList.add('hidden');
-            reportContainer.classList.remove('hidden');
-        } catch (error) {
-            statusText.innerText = `> Failed to load report: ${error.message}`;
-        }
-    }
-
-    function renderFindings(findings) {
-        if (findings.length === 0) {
-            findingsList.innerHTML = `<p class="text-gray-600">No high-risk clauses found. Document looks compliant!</p>`;
-            return;
-        }
-
-        findings.forEach(finding => {
-            const card = document.createElement('div');
-            card.className = "bg-white p-6 rounded-lg shadow-md border-l-4 border-red-500";
-            card.innerHTML = `
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="text-lg font-bold text-red-600">Risk Flagged</h3>
-                    <span class="text-sm font-mono bg-gray-100 px-2 py-1 rounded">Confidence: ${(finding.confidence_score * 100).toFixed(0)}%</span>
-                </div>
-                <p class="text-sm text-gray-500 mb-4 font-semibold">Citation: ${finding.rule_citation}</p>
-                
-                <div class="mb-4">
-                    <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Original Text</p>
-                    <p class="text-gray-700 bg-red-50 p-3 rounded text-sm">${finding.original_text}</p>
-                </div>
-                
-                <div class="mb-4">
-                    <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Issue</p>
-                    <p class="text-gray-700 text-sm">${finding.issue_description}</p>
-                </div>
-                
-                <div>
-                    <p class="text-xs text-gray-400 uppercase tracking-wider font-bold mb-1">Suggested Rewrite</p>
-                    <p class="text-green-800 bg-green-50 p-3 rounded text-sm">${finding.suggested_rewrite}</p>
-                </div>
-            `;
-            findingsList.appendChild(card);
-        });
-    }
-    </script>
+    <script src="/static/app.js"></script>
 </body>
 </html>

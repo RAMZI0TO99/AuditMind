@@ -24,7 +24,7 @@ class ExtractionAgent:
     def __init__(self):
         self.llm = Gemini(
             api_key=os.environ.get("GEMINI_API_KEY"), 
-            model="models/gemini-2.5-flash"
+            model="models/gemini-3.1-flash-lite-preview"
         )
         
     def run(self, file_path: str) -> list[str]:
@@ -60,24 +60,24 @@ class ExtractionAgent:
             print("Regex failed. Falling back to raw text chunking.")
             return [raw_text]
 
-
 class AuditAgent:
-    def __init__(self):
-        # 1. Force create the directory and a dummy policy file
-        os.makedirs("rules", exist_ok=True)
-        policy_path = os.path.join("rules", "policy.txt")
-        
-        if not os.path.exists(policy_path):
-            with open(policy_path, "w") as f:
-                f.write("COMPANY COMPLIANCE POLICY FOR FREELANCE CONTRACTS\n\nRULE 1 - PAYMENT TERMS:\nAll client payments must be made within a Net-30 day schedule from the date of invoice receipt. Any payment terms extending beyond 30 days (such as Net-60, Net-90, or Net-120) are strictly prohibited and non-compliant.\n\nRULE 2 - LIMITATION OF LIABILITY:\nIndependent Contractors shall not assume uncapped or unlimited financial liability under any circumstances. Liability must be strictly capped at the total project fee paid to the contractor. Any clause forcing the contractor to cover total business losses or unlimited damages is non-compliant.")
+    def __init__(self, user_id: int):
+        # 1. Dynamically target the user's private rulebook folder
+        self.rules_dir = f"storage/rules/user_{user_id}"
+        self.query_engine = None
 
-        # 2. Load the vector database with the NEWEST embedding model
+        # 2. Safety Check: If they haven't uploaded rules yet, gracefully skip the audit
+        if not os.path.exists(self.rules_dir) or not os.listdir(self.rules_dir):
+            print(f"User {user_id} has no custom rules. Audit will return compliant by default.")
+            return
+
+        # 3. Load the user-specific Vector Database
         try:
-            self.compliance_docs = SimpleDirectoryReader("rules").load_data()
+            self.compliance_docs = SimpleDirectoryReader(self.rules_dir).load_data()
             
             embed_model = GeminiEmbedding(
                 api_key=os.environ.get("GEMINI_API_KEY"),
-                model_name="models/gemini-embedding-001" # <--- UPDATED HERE
+                model_name="models/gemini-embedding-001"
             )
             
             self.index = VectorStoreIndex.from_documents(
@@ -85,15 +85,16 @@ class AuditAgent:
                 embed_model=embed_model
             )
             self.query_engine = self.index.as_query_engine()
-            print("Successfully loaded rules into the Vector DB!")
+            print(f"Successfully loaded Vector DB for User {user_id}!")
             
         except Exception as e:
-            print(f"Warning: Could not load rules directory. {e}")
-            self.query_engine = None
+            print(f"Warning: Could not load rules for User {user_id}. {e}")
 
     def evaluate_clauses(self, clauses: list) -> list[dict]:
         flagged_items = []
-        if not self.query_engine: return flagged_items
+        # If no query engine exists (because they have no rules), return empty list (compliant)
+        if not self.query_engine: 
+            return flagged_items
 
         for clause in clauses:
             prompt = f"""
@@ -108,14 +109,12 @@ class AuditAgent:
             
             if "COMPLIANT" not in result_text.upper():
                 try:
-                    # Look for everything between the first { and the last }
                     match = re.search(r'\{.*\}', result_text, re.DOTALL)
                     if match:
                         issue = json.loads(match.group(0))
                         issue["original_text"] = clause
                         flagged_items.append(issue)
                 except json.JSONDecodeError:
-                    print(f"Failed to parse Audit Agent output: {result_text}")
                     pass
                     
         return flagged_items
@@ -125,7 +124,7 @@ class DraftingAgent:
     def __init__(self):
         self.llm = Gemini(
             api_key=os.environ.get("GEMINI_API_KEY"), 
-            model="models/gemini-2.5-flash"
+            model="models/gemini-3.1-flash-lite-preview"
         )
 
     def rewrite_clause(self, original_text: str, violation: str) -> str:
